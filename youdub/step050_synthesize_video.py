@@ -19,9 +19,10 @@ def split_text(input_data,
     output_data = []
     for item in input_data:
         start = item["start"]
-        text = item["translation"]
+        # text = item["translation"]
         speaker = item.get("speaker", "SPEAKER_00")
-        original_text = item["text"]
+        # original_text = item["text"]
+        text = item["text"]
         sentence_start = 0
 
         # Calculate the duration for each character
@@ -41,8 +42,8 @@ def split_text(input_data,
             output_data.append({
                 "start": round(start, 3),
                 "end": round(sentence_end, 3),
-                "text": original_text,
-                "translation": sentence,
+                # "text": original_text,
+                "text": sentence,
                 "speaker": speaker
             })
 
@@ -59,13 +60,13 @@ def format_timestamp(seconds):
     minutes, seconds = divmod(seconds, 60)
     return f"{hours:02}:{minutes:02}:{seconds:02},{millisec:03}"
 
-def generate_srt(translation, srt_path, speed_up=1, max_line_char=30):
-    translation = split_text(translation)
+def generate_srt(text, srt_path, speed_up=1, max_line_char=30):
+    text = split_text(text)
     with open(srt_path, 'w', encoding='utf-8') as f:
-        for i, line in enumerate(translation):
+        for i, line in enumerate(text):
             start = format_timestamp(line['start']/speed_up)
             end = format_timestamp(line['end']/speed_up)
-            text = line['translation']
+            text = line['text']
             line = len(text)//(max_line_char+1) + 1
             avg = min(round(len(text)/line), max_line_char)
             text = '\n'.join([text[i*avg:(i+1)*avg]
@@ -102,19 +103,23 @@ def synthesize_video(folder, subtitles=True, speed_up=1.05, fps=30, resolution='
         logger.info(f'Video already synthesized in {folder}')
         return
     
-    translation_path = os.path.join(folder, 'translation.json')
-    input_audio = os.path.join(folder, 'audio_combined.wav')
+    # translation_path = os.path.join(folder, 'translation.json')
+    translation_path = os.path.join(folder, 'transcript.json')
+
+    # input_audio = os.path.join(folder, 'audio_combined.wav')
+    input_audio = os.path.join(folder, 'audio_vocals.wav')
+
     input_video = os.path.join(folder, 'download.mp4')
     
     if not os.path.exists(translation_path) or not os.path.exists(input_audio):
         return
     
     with open(translation_path, 'r', encoding='utf-8') as f:
-        translation = json.load(f)
+        text = json.load(f)
         
     srt_path = os.path.join(folder, 'subtitles.srt')
     output_video = os.path.join(folder, 'video.mp4')
-    generate_srt(translation, srt_path, speed_up)
+    generate_srt(text, srt_path, speed_up)
     srt_path = srt_path.replace('\\', '/')
     aspect_ratio = get_aspect_ratio(input_video)
     width, height = convert_resolution(aspect_ratio, resolution)
@@ -153,6 +158,8 @@ def synthesize_all_video_under_folder(folder, subtitles=True, speed_up=1.05, fps
             synthesize_video(root, subtitles=subtitles,
                              speed_up=speed_up, fps=fps, resolution=resolution)
     return f'Synthesized all videos under {folder}'
+
+
 if __name__ == '__main__':
     folder = r'videos\3Blue1Brown\20231207 Im still astounded this is true'
     synthesize_all_video_under_folder(folder, subtitles=True)

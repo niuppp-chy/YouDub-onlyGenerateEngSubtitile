@@ -33,7 +33,8 @@ def adjust_audio_length(wav_path, desired_length, sample_rate = 24000, min_speed
     return wav[:int(desired_length*sample_rate)], desired_length
 
 def generate_wavs(folder, force_bytedance=False):
-    transcript_path = os.path.join(folder, 'translation.json')
+    #transcript_path = os.path.join(folder, 'translation.json')
+    transcript_path = os.path.join(folder, 'transcript.json')
     output_folder = os.path.join(folder, 'wavs')
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -49,7 +50,8 @@ def generate_wavs(folder, force_bytedance=False):
     full_wav = np.zeros((0, ))
     for i, line in enumerate(transcript):
         speaker = line['speaker']
-        text = preprocess_text(line['translation'])
+        # text = preprocess_text(line['translation'])
+        text = preprocess_text(line['text'])
         output_path = os.path.join(output_folder, f'{str(i).zfill(4)}.wav')
         speaker_wav = os.path.join(folder, 'SPEAKER', f'{speaker}.wav')
         if num_speakers == 1:
@@ -101,7 +103,7 @@ def generate_wavs(folder, force_bytedance=False):
 
 def generate_all_wavs_under_folder(root_folder, force_bytedance=False):
     for root, dirs, files in os.walk(root_folder):
-        if 'translation.json' in files and 'audio_combined.wav' not in files:
+        if 'transcript.json' in files and 'audio_combined.wav' not in files:
             generate_wavs(root, force_bytedance)
     return f'Generated all wavs under {root_folder}'
 

@@ -9,7 +9,7 @@ from loguru import logger
 
 load_dotenv()
 
-model_name = os.getenv('MODEL_NAME', 'gpt-3.5-turbo')
+model_name = os.getenv('MODEL_NAME', 'gpt-4')
 print(f'using model {model_name}')
 if model_name == "01ai/Yi-34B-Chat-4bits":
     extra_body = {
@@ -36,10 +36,12 @@ def ensure_transcript_length(transcript, max_length=4000):
     before, after = transcript[:mid], transcript[mid:]
     length = max_length//2
     return before[:length] + after[-length:]
+
+
 def summarize(info, transcript, target_language='简体中文'):
     client = OpenAI(
     # This is the default and can be omitted
-    base_url=os.getenv('OPENAI_API_BASE', 'https://api.openai.com/v1'),
+    base_url=os.getenv('OPENAI_API_BASE', 'https://platform.openai.com/api-keys'),
     api_key=os.getenv('OPENAI_API_KEY')
 )
     transcript = ' '.join(line['text'] for line in transcript)
@@ -58,6 +60,7 @@ def summarize(info, transcript, target_language='简体中文'):
     success = False
     for retry in range(5):
         try:
+            logger.warning('555\n')
             messages = [
                 {'role': 'system', 'content': f'You are a expert in the field of this video. Please summarize the video in JSON format.\n```json\n{{"title": "the title of the video", "summary", "the summary of the video"}}\n```'},
                 {'role': 'user', 'content': full_description+retry_message},
@@ -68,8 +71,10 @@ def summarize(info, transcript, target_language='简体中文'):
                 timeout=240,
                 extra_body=extra_body
             )
+            logger.warning('4444 \n')
             summary = response.choices[0].message.content.replace('\n', '')
             if '视频标题' in summary:
+                logger.warning('1111\n')
                 raise Exception("包含“视频标题”")
             logger.info(summary)
             summary = re.findall(r'\{.*?\}', summary)[0]
@@ -79,6 +84,7 @@ def summarize(info, transcript, target_language='简体中文'):
                 'summary': summary['summary'].replace('summary:', '').strip()
             }
             if 'title' in summary['title']:
+                logger.warning('222\n')
                 raise Exception('Invalid summary')
             success = True
             break
@@ -86,6 +92,7 @@ def summarize(info, transcript, target_language='简体中文'):
             retry_message += '\nSummarize the video in JSON format:\n```json\n{"title": "", "summary": ""}\n```'
             logger.warning(f'总结失败\n{e}')
             time.sleep(1)
+
     if not success:
         raise Exception(f'总结失败')
         
