@@ -7,6 +7,8 @@ fork的仓库，经过本地修改，只生成yt上没有字幕的视频，并�
         modified:   youdub/step030_translation.py   
         modified:   youdub/step040_tts.py   
         modified:   youdub/step050_synthesize_video.py   
+        
+![Uploading image.png…]()
 
 
 
