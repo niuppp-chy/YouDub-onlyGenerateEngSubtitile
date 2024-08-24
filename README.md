@@ -1,12 +1,12 @@
 
-fork的仓库，经过本地修改，只生成yt上没有字幕的视频，并且只生成英文字幕(使用whisper)，然后贴在视频下方。（不会生成中文字幕）
+fork的仓库，经过本地修改，只生成yt上没有字幕的视频，并且只生成英文字幕(使用whisper)，然后贴在视频下方。（不会生成中文字幕） 
 
-主要的修改文件为：
-        new file:   .env
-        deleted:    .env.example
-        modified:   youdub/step030_translation.py
-        modified:   youdub/step040_tts.py
-        modified:   youdub/step050_synthesize_video.py
+主要的修改文件为： 
+        new file:   .env 
+        deleted:    .env.example 
+        modified:   youdub/step030_translation.py 
+        modified:   youdub/step040_tts.py 
+        modified:   youdub/step050_synthesize_video.py 
 
 
 
