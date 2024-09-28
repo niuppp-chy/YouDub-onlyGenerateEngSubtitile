@@ -19,9 +19,7 @@ def split_text(input_data,
     output_data = []
     for item in input_data:
         start = item["start"]
-        # text = item["translation"]
         speaker = item.get("speaker", "SPEAKER_00")
-        # original_text = item["text"]
         text = item["text"]
         sentence_start = 0
 
@@ -42,7 +40,6 @@ def split_text(input_data,
             output_data.append({
                 "start": round(start, 3),
                 "end": round(sentence_end, 3),
-                # "text": original_text,
                 "text": sentence,
                 "speaker": speaker
             })
@@ -52,7 +49,8 @@ def split_text(input_data,
             sentence_start = i + 1
 
     return output_data
-    
+
+
 def format_timestamp(seconds):
     """Converts seconds to the SRT time format."""
     millisec = int((seconds - int(seconds)) * 1000)
@@ -60,20 +58,44 @@ def format_timestamp(seconds):
     minutes, seconds = divmod(seconds, 60)
     return f"{hours:02}:{minutes:02}:{seconds:02},{millisec:03}"
 
+
 def generate_srt(text, srt_path, speed_up=1, max_line_char=30):
     text = split_text(text)
+    
     with open(srt_path, 'w', encoding='utf-8') as f:
         for i, line in enumerate(text):
             start = format_timestamp(line['start']/speed_up)
             end = format_timestamp(line['end']/speed_up)
             text = line['text']
-            line = len(text)//(max_line_char+1) + 1
-            avg = min(round(len(text)/line), max_line_char)
-            text = '\n'.join([text[i*avg:(i+1)*avg]
-                             for i in range(line)])
+
+            # Split text on spaces to avoid splitting words between lines
+            words = text.split(' ')
+            lines = []
+            current_line = ""
+
+            for word in words:
+                # Check if adding this word would exceed the max_line_char
+                if len(current_line) + len(word) + (1 if current_line else 0) <= max_line_char:
+                    if current_line:
+                        current_line += ' ' + word
+                    else:
+                        current_line = word
+                else:
+                    # Append the current line and start a new line with the word
+                    lines.append(current_line)
+                    current_line = word
+
+            # Append the last line
+            if current_line:
+                lines.append(current_line)
+
+            # Join lines with newline for SRT format
+            formatted_text = '\n'.join(lines)
+
             f.write(f'{i+1}\n')
             f.write(f'{start} --> {end}\n')
-            f.write(f'{text}\n\n')
+            f.write(f'{formatted_text}\n\n')
+
 
 
 def get_aspect_ratio(video_path):
@@ -91,24 +113,20 @@ def convert_resolution(aspect_ratio, resolution='1080p'):
     else:
         height = int(resolution[:-1])
         width = int(height * aspect_ratio)
-    # make sure width and height are divisibal by 2
+    # make sure width and height are divisible by 2
     width = width - width % 2
     height = height - height % 2
     
-    # return f'{width}x{height}'
     return width, height
-    
+
+
 def synthesize_video(folder, subtitles=True, speed_up=1.05, fps=30, resolution='1080p'):
     if os.path.exists(os.path.join(folder, 'video.mp4')):
         logger.info(f'Video already synthesized in {folder}')
         return
     
-    # translation_path = os.path.join(folder, 'translation.json')
     translation_path = os.path.join(folder, 'transcript.json')
-
-    # input_audio = os.path.join(folder, 'audio_combined.wav')
     input_audio = os.path.join(folder, 'audio_vocals.wav')
-
     input_video = os.path.join(folder, 'download.mp4')
     
     if not os.path.exists(translation_path) or not os.path.exists(input_audio):
@@ -150,7 +168,7 @@ def synthesize_video(folder, subtitles=True, speed_up=1.05, fps=30, resolution='
     ]
     subprocess.run(ffmpeg_command)
     time.sleep(1)
-    
+
 
 def synthesize_all_video_under_folder(folder, subtitles=True, speed_up=1.05, fps=30, resolution='1080p'):
     for root, dirs, files in os.walk(folder):
